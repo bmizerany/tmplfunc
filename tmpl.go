@@ -18,7 +18,7 @@
 //
 //	{{template "link" (dict "url" "https://golang.org" "text" "the Go language")}}
 //
-// Function Definitions
+// # Function Definitions
 //
 // The function installed for a given template depends on the name of the
 // defined template, which can include not just a function name but also
@@ -52,9 +52,9 @@
 //
 //	{{define "link url text?"}}<a href="{{.url}}">{{or .text .url}}</a>{{end}}
 //
-// 	The Go home page is {{link "https://golang.org"}}.
+//	The Go home page is {{link "https://golang.org"}}.
 //
-// Usage
+// # Usage
 //
 // This package is meant to be used with templates from either the
 // text/template or html/template packages. Given a *template.Template
@@ -63,6 +63,7 @@
 //	t.Parse(text) -> tmplfunc.Parse(t, text)
 //	t.ParseFiles(list) -> tmplfunc.ParseFiles(t, list)
 //	t.ParseGlob(pattern) -> tmplfunc.ParseGlob(t, pattern)
+//	t.ParseFS(fsys, patterns...) -> tmplfunc.ParseFS(t, fsys, patterns...)
 //
 // Parse, ParseFiles, and ParseGlob parse the new templates but also add
 // functions that invoke them, named according to the function signatures.
@@ -81,6 +82,7 @@ package tmplfunc
 
 import (
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"path/filepath"
 
@@ -183,6 +185,16 @@ func ParseGlob(t Template, pattern string) error {
 		return fmt.Errorf("tmplfunc: pattern matches no files: %#q", pattern)
 	}
 	return parseFiles(t, readFileOS, filenames...)
+}
+
+// ParseFS is like t.ParseFS(fsys, patterns...), adding functions for the parsed templates.
+func ParseFS(t Template, fsys fs.FS, patterns ...string) error {
+	readFileFS := func(file string) (string, []byte, error) {
+		name := filepath.Base(file)
+		b, err := fs.ReadFile(fsys, file)
+		return name, b, err
+	}
+	return parseFiles(t, readFileFS, patterns...)
 }
 
 func must(err error) {
